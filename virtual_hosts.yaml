@@ -1,5 +1,5 @@
 virtual_hosts:
-  - hostName: "website1"
+  - hostName: "website1" 
     docRoot: "htdocs1"
   - hostName: "website2"
     docRoot: "htdocs2"
