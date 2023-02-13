@@ -96,7 +96,7 @@ func (s *Server) HandleConnection(conn net.Conn) {
 
 		// error 2: timeout from the server ==> net.Error
 		if err0, ok := err.(net.Error); ok && err0.Timeout() {
-			if !contentReceived { // read nothing
+			if contentReceived { // read nothing
 				log.Printf("Connection To %v timed out", conn.RemoteAddr()) // RemoteAddr returns the remote network address
 				res := &Response{}
 				res.HandleBadRequest() // read partial
@@ -104,10 +104,6 @@ func (s *Server) HandleConnection(conn net.Conn) {
 				_ = conn.Close()
 				return
 			}
-			// res := &Response{}
-			// res.HandleBadRequest() // read partial
-			// _ = res.Write(conn)
-			// _ = conn.Close()
 			return
 		}
 
