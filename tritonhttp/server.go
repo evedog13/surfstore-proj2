@@ -145,6 +145,8 @@ func (res *Response) init(req *Request) {
 		if req.Close {
 			res.Headers["Connection"] = "close"
 		}
+	} else {
+		res.Headers["Connection"] = "close"
 	}
 }
 
@@ -170,8 +172,6 @@ func (res *Response) HandleBadRequest() {
 	res.StatusCode = 400
 	res.Request = nil
 	res.FilePath = "" // set the filepath to be new
-	res.Headers = make(map[string]string)
-	res.Headers["Connection"] = "close"
 }
 
 func (res *Response) HandleNotFound(req *Request) {
