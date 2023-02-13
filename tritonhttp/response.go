@@ -90,7 +90,7 @@ func (res *Response) WriteHeaders(bw *bufio.Writer) error {
 		}
 	}
 
-	if _, err := bw.WriteString("\r\n"); err != nil {
+	if _, err := bw.WriteString("\r\n"); err != nil { // between headers and body
 		return err
 	}
 	if err := bw.Flush(); err != nil {

@@ -27,7 +27,12 @@ func MakeRequest(br *bufio.Reader) (req *Request, contentReceived bool, err erro
 	}
 
 	req.Method, req.URL, req.Proto, err = parseRequestFirstLine(firstLine)
+	println("this is proto" + req.Proto)
 	if err != nil {
+		return nil, true, err
+	}
+
+	if req.Proto != "HTTP/1.1" {
 		return nil, true, err
 	}
 
@@ -38,6 +43,7 @@ func MakeRequest(br *bufio.Reader) (req *Request, contentReceived bool, err erro
 
 	req.Headers = make(map[string]string)
 
+	hasHost := false
 	for {
 		line, err := ReadLine(br)
 		key, value, err := parseRequestRestLine(line)
@@ -48,7 +54,16 @@ func MakeRequest(br *bufio.Reader) (req *Request, contentReceived bool, err erro
 		if err != nil {
 			return nil, true, err
 		}
+		if key == "Host" { // host exists but it does not have value ==> 200 OK
+			hasHost = true
+		}
 	}
+
+	// host is missing: request is invalid
+	if !hasHost {
+		return nil, true, err
+	}
+
 	// req.Headers = headers // fill completely
 	req.Host = req.Headers["Host"]
 	if req.Headers["Connection"] == "close" {

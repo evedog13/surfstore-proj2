@@ -98,14 +98,16 @@ func (s *Server) HandleConnection(conn net.Conn) {
 		if err0, ok := err.(net.Error); ok && err0.Timeout() {
 			if !contentReceived { // read nothing
 				log.Printf("Connection To %v timed out", conn.RemoteAddr()) // RemoteAddr returns the remote network address
+				res := &Response{}
+				res.HandleBadRequest() // read partial
+				_ = res.Write(conn)
 				_ = conn.Close()
 				return
 			}
-			// read partial
-			res := &Response{}
-			res.HandleBadRequest()
-			_ = res.Write(conn) // 之后都关了 write的error检不检查无所谓
-			_ = conn.Close()
+			// res := &Response{}
+			// res.HandleBadRequest() // read partial
+			// _ = res.Write(conn)
+			// _ = conn.Close()
 			return
 		}
 
@@ -113,7 +115,7 @@ func (s *Server) HandleConnection(conn net.Conn) {
 		// Handle te request which is not a GET and immediatel  close the connection and return
 		if err != nil {
 			res := &Response{}
-			res.HandleBadRequest()
+			res.HandleBadRequest() // invalid
 			_ = res.Write(conn)
 			_ = conn.Close()
 			return
@@ -121,7 +123,7 @@ func (s *Server) HandleConnection(conn net.Conn) {
 
 		// handle good request
 		log.Printf("Handle Good Request")
-		res := s.HandleGoodRequest(req)
+		res := s.HandleGoodRequest(req) // valid but cannot found
 		err = res.Write(conn)
 		if err != nil {
 			return
