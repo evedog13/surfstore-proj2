@@ -75,18 +75,23 @@ func (s *Server) ValidateServerSetup() error {
 
 func (s *Server) HandleConnection(conn net.Conn) {
 	br := bufio.NewReader(conn)
-
+	// set out a timeout
+	if err := conn.SetReadDeadline(time.Now().Add(5 * time.Second)); err != nil {
+		log.Printf("Failed to set timeout for connection %v", conn)
+		_ = conn.Close()
+		return
+	}
 	for {
-		// set out a timeout
-		if err := conn.SetReadDeadline(time.Now().Add(5 * time.Second)); err != nil {
-			log.Printf("Failed to set timeout for connection %v", conn)
-			_ = conn.Close()
-			return
-		}
+		// // set out a timeout
+		// if err := conn.SetReadDeadline(time.Now().Add(5 * time.Second)); err != nil {
+		// 	log.Printf("Failed to set timeout for connection %v", conn)
+		// 	_ = conn.Close()
+		// 	return
+		// }
 
 		// read next request from the client
 		req, contentReceived, err := MakeRequest(br)
-		fmt.Println("makerequest: ")
+		fmt.Print("makerequest: ")
 		fmt.Println(err)
 
 		// error 1: client has closed the conn ==> io.EOF (还没有timeout就已经读完了，valid)

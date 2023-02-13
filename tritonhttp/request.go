@@ -3,7 +3,6 @@ package tritonhttp
 import (
 	"bufio"
 	"fmt"
-	"net"
 	"strings"
 )
 
@@ -23,26 +22,29 @@ func MakeRequest(br *bufio.Reader) (req *Request, contentReceived bool, err erro
 	req = &Request{}
 
 	firstLine, err := ReadLine(br)
+	fmt.Print("firstLine: ")
+	fmt.Println(firstLine)
+	fmt.Print("err: ")
+	fmt.Println(err)
+	if firstLine == "" {
+		fmt.Print("readline->makerequest: ")
+		fmt.Println(err)
+		return nil, false, err // return false when reads the first line unsuccessfully
+	}
 	if err != nil {
-		fmt.Print("readline->makerequest")
+		fmt.Print("readline->makerequest: ")
 		fmt.Println(err)
 		return nil, false, err // return false when reads the first line unsuccessfully
 	}
 
 	req.Method, req.URL, req.Proto, err = parseRequestFirstLine(firstLine)
-	println("this is proto" + req.Proto)
 	if err != nil {
 		return nil, true, err
 	}
 
 	if req.Proto != "HTTP/1.1" || req.URL[0] != '/' || req.Method != "GET" {
-		return nil, true, fmt.Errorf("400")
+		return nil, true, fmt.Errorf("1.400")
 	}
-
-	// check if the URL is malformed or invalid
-	// if req.URL[0] != '/' || req.Method != "GET" {
-	// 	return nil, true, fmt.Errorf("Could not parse the request line")
-	// }
 
 	req.Headers = make(map[string]string)
 
@@ -64,7 +66,7 @@ func MakeRequest(br *bufio.Reader) (req *Request, contentReceived bool, err erro
 
 	// host is missing: request is invalid
 	if !hasHost {
-		return nil, true, fmt.Errorf("400")
+		return nil, true, fmt.Errorf("2.400")
 	}
 
 	// req.Headers = headers // fill completely
@@ -108,11 +110,6 @@ func ReadLine(br *bufio.Reader) (string, error) {
 		if err != nil {
 			fmt.Print("readline: ")
 			fmt.Println(err)
-			if err0, ok := err.(net.Error); ok && err0.Timeout() {
-				fmt.Print("timeout: ")
-				fmt.Println(err)
-				return "", err
-			}
 			return line, err
 		}
 		// Return the line when reaching line end
