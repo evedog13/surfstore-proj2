@@ -32,14 +32,14 @@ func MakeRequest(br *bufio.Reader) (req *Request, contentReceived bool, err erro
 		return nil, true, err
 	}
 
-	if req.Proto != "HTTP/1.1" {
-		return nil, true, err
+	if req.Proto != "HTTP/1.1" || req.URL[0] != '/' || req.Method != "GET" {
+		return nil, true, fmt.Errorf("400")
 	}
 
 	// check if the URL is malformed or invalid
-	if req.URL[0] != '/' || req.Method != "GET" {
-		return nil, true, err
-	}
+	// if req.URL[0] != '/' || req.Method != "GET" {
+	// 	return nil, true, fmt.Errorf("Could not parse the request line")
+	// }
 
 	req.Headers = make(map[string]string)
 

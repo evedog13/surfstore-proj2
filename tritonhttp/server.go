@@ -86,10 +86,11 @@ func (s *Server) HandleConnection(conn net.Conn) {
 
 		// read next request from the client
 		req, contentReceived, err := MakeRequest(br)
+		fmt.Println(err)
 
 		// error 1: client has closed the conn ==> io.EOF (还没有timeout就已经读完了，valid)
 		if errors.Is(err, io.EOF) {
-			log.Printf("Connection closed by %v", conn.RemoteAddr())
+			fmt.Printf("Connection closed by %v", conn.RemoteAddr())
 			_ = conn.Close()
 			return
 		}
@@ -112,13 +113,14 @@ func (s *Server) HandleConnection(conn net.Conn) {
 		if err != nil {
 			res := &Response{}
 			res.HandleBadRequest() // invalid
+			fmt.Println(res)
 			_ = res.Write(conn)
 			_ = conn.Close()
 			return
 		}
 
 		// handle good request
-		log.Printf("Handle Good Request")
+		fmt.Printf("Handle Good Request")
 		res := s.HandleGoodRequest(req) // valid but cannot found
 		err = res.Write(conn)
 		if err != nil {
