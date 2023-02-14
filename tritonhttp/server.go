@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -76,18 +75,18 @@ func (s *Server) ValidateServerSetup() error {
 func (s *Server) HandleConnection(conn net.Conn) {
 	br := bufio.NewReader(conn)
 	// set out a timeout
-	if err := conn.SetReadDeadline(time.Now().Add(5 * time.Second)); err != nil {
-		log.Printf("Failed to set timeout for connection %v", conn)
-		_ = conn.Close()
-		return
-	}
+	// if err := conn.SetReadDeadline(time.Now().Add(5 * time.Second)); err != nil {
+	// 	log.Printf("Failed to set timeout for connection %v", conn)
+	// 	_ = conn.Close()
+	// 	return
+	// }
 	for {
-		// // set out a timeout
-		// if err := conn.SetReadDeadline(time.Now().Add(5 * time.Second)); err != nil {
-		// 	log.Printf("Failed to set timeout for connection %v", conn)
-		// 	_ = conn.Close()
-		// 	return
-		// }
+		// set out a timeout
+		if err := conn.SetReadDeadline(time.Now().Add(5 * time.Second)); err != nil {
+			log.Printf("Failed to set timeout for connection %v", conn)
+			_ = conn.Close()
+			return
+		}
 
 		// read next request from the client
 		req, contentReceived, err := MakeRequest(br)
@@ -102,14 +101,16 @@ func (s *Server) HandleConnection(conn net.Conn) {
 		}
 
 		// error 2: timeout from the server ==> net.Error
-		if err0, ok := err.(net.Error); ok && err0.Timeout() {
-			if contentReceived { // read nothing
+		if err, ok := err.(net.Error); ok && err.Timeout() {
+			if !contentReceived { // read nothing
 				fmt.Printf("Connection To %v timed out", conn.RemoteAddr()) // RemoteAddr returns the remote network address
-				res := &Response{}
-				res.HandleBadRequest() // read partial
-				_ = res.Write(conn)
 				_ = conn.Close()
+				return
 			}
+			res := &Response{}
+			res.HandleBadRequest() // read partial
+			_ = res.Write(conn)
+			_ = conn.Close()
 			return
 		}
 
@@ -142,7 +143,7 @@ func (s *Server) HandleConnection(conn net.Conn) {
 
 func (res *Response) init(req *Request) {
 	res.Proto = "HTTP/1.1"
-	res.Request = req
+	// res.Request = req
 	res.Headers = make(map[string]string)
 	res.Headers["Date"] = FormatTime(time.Now())
 	if req != nil {
@@ -152,9 +153,10 @@ func (res *Response) init(req *Request) {
 		if req.Close {
 			res.Headers["Connection"] = "close"
 		}
-	} else {
-		res.Headers["Connection"] = "close"
 	}
+	// else {
+	// 	res.Headers["Connection"] = "close"
+	// }
 }
 
 func (s *Server) HandleGoodRequest(req *Request) (res *Response) {
@@ -165,10 +167,15 @@ func (s *Server) HandleGoodRequest(req *Request) (res *Response) {
 	absPath = filepath.Clean(absPath)
 
 	// abs（加了url肯定长一些）里面有没有包含docroot
-	if strings.Contains(absPath, s.VirtualHosts[req.Host]) { // 200 -> HandleOK
+	// if strings.Contains(absPath, s.VirtualHosts[req.Host]) { // 200 -> HandleOK
+	// 	res.HandleOK(req, absPath)
+	// } else { // 404 -> HandleNotHound
+	// 	res.HandleNotFound(req)
+	// }
+	if absPath[:len(s.VirtualHosts[req.Host])] != s.VirtualHosts[req.Host] {
+		res.HandleNotFound()
+	} else {
 		res.HandleOK(req, absPath)
-	} else { // 404 -> HandleNotHound
-		res.HandleNotFound(req)
 	}
 	return res
 }
@@ -179,9 +186,10 @@ func (res *Response) HandleBadRequest() {
 	res.StatusCode = 400
 	res.Request = nil
 	res.FilePath = "" // set the filepath to be new
+	res.Headers["Connection"] = "close"
 }
 
-func (res *Response) HandleNotFound(req *Request) {
+func (res *Response) HandleNotFound() {
 	// 404
 	res.StatusCode = 404
 	res.FilePath = "" // set the filepath to be new
@@ -195,7 +203,7 @@ func (res *Response) HandleOK(req *Request, path string) {
 
 	stats, err := os.Stat(path)
 	if errors.Is(err, os.ErrNotExist) {
-		res.HandleNotFound(req)
+		res.HandleNotFound()
 		return
 	}
 	res.Headers["Last-Modified"] = FormatTime(stats.ModTime())

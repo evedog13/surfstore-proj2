@@ -22,17 +22,12 @@ func MakeRequest(br *bufio.Reader) (req *Request, contentReceived bool, err erro
 	req = &Request{}
 
 	firstLine, err := ReadLine(br)
-	fmt.Print("firstLine: ")
-	fmt.Println(firstLine)
-	fmt.Print("err: ")
-	fmt.Println(err)
-	if firstLine == "" {
-		fmt.Print("readline->makerequest: ")
-		fmt.Println(err)
-		return nil, false, err // return false when reads the first line unsuccessfully
-	}
+	// fmt.Print("firstLine: ")
+	// fmt.Println(firstLine)
+	// fmt.Print("err: ")
+	// fmt.Println(err)
 	if err != nil {
-		fmt.Print("readline->makerequest: ")
+		// fmt.Print("readline->makerequest: ")
 		fmt.Println(err)
 		return nil, false, err // return false when reads the first line unsuccessfully
 	}
@@ -52,7 +47,6 @@ func MakeRequest(br *bufio.Reader) (req *Request, contentReceived bool, err erro
 	for {
 		line, err := ReadLine(br)
 		key, value, err := parseRequestRestLine(line)
-		req.Headers[key] = value // fill the headers
 		if line == "" {
 			break
 		}
@@ -61,6 +55,11 @@ func MakeRequest(br *bufio.Reader) (req *Request, contentReceived bool, err erro
 		}
 		if key == "Host" { // host exists but it does not have value ==> 200 OK
 			hasHost = true
+			req.Host = value
+		} else if key == "Connection" && value == "close" {
+			req.Close = true
+		} else {
+			req.Headers[key] = value
 		}
 	}
 
@@ -69,11 +68,6 @@ func MakeRequest(br *bufio.Reader) (req *Request, contentReceived bool, err erro
 		return nil, true, fmt.Errorf("2.400")
 	}
 
-	// req.Headers = headers // fill completely
-	req.Host = req.Headers["Host"]
-	if req.Headers["Connection"] == "close" {
-		req.Close = true
-	}
 	return req, true, err
 }
 
@@ -108,8 +102,6 @@ func ReadLine(br *bufio.Reader) (string, error) {
 		line += s
 		// Return the error
 		if err != nil {
-			fmt.Print("readline: ")
-			fmt.Println(err)
 			return line, err
 		}
 		// Return the line when reaching line end
