@@ -45,9 +45,9 @@ func (res *Response) Write(w io.Writer) error {
 	}
 
 	// important: to make sure all of your content is right back into your connection, if not, you may receive partial response
-	// if err := bw.Flush(); err != nil {
-	// 	return nil
-	// }
+	if err := bw.Flush(); err != nil {
+		return nil
+	}
 
 	return nil
 }
@@ -68,9 +68,9 @@ func (res *Response) WriteStatusLine(bw *bufio.Writer) error {
 		return err
 	}
 
-	if err := bw.Flush(); err != nil {
-		return nil
-	}
+	// if err := bw.Flush(); err != nil {
+	// 	return nil
+	// }
 	return nil
 }
 
@@ -93,9 +93,9 @@ func (res *Response) WriteHeaders(bw *bufio.Writer) error {
 	if _, err := bw.WriteString("\r\n"); err != nil { // between headers and body
 		return err
 	}
-	if err := bw.Flush(); err != nil {
-		return nil
-	}
+	// if err := bw.Flush(); err != nil {
+	// 	return nil
+	// }
 	return nil
 }
 
@@ -111,8 +111,8 @@ func (res *Response) WriteBody(bw *bufio.Writer) error {
 		}
 	}
 
-	if err := bw.Flush(); err != nil {
-		return nil
-	}
+	// if err := bw.Flush(); err != nil {
+	// 	return nil
+	// }
 	return nil
 }
